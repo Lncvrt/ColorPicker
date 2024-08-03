@@ -15,6 +15,8 @@ namespace ColorPicker
         private IntPtr _hookID = IntPtr.Zero;
         private bool _isUnlocked = true;
 
+        private Color _color;
+
         public ColorPicker()
         {
             InitializeComponent();
@@ -75,7 +77,6 @@ namespace ColorPicker
                 Console.WriteLine($"Error: {ex.Message}");
             }
         }
-
         private void UpdateColorDisplay(Color color)
         {
             if (InvokeRequired)
@@ -84,6 +85,8 @@ namespace ColorPicker
             }
             else
             {
+                _color = color;
+
                 int r = color.R;
                 int g = color.G;
                 int b = color.B;
@@ -104,16 +107,118 @@ namespace ColorPicker
                     c = m = y = 0;
                 }
 
+                float rNorm = r / 255f;
+                float gNorm = g / 255f;
+                float bNorm = b / 255f;
+
+                float max = Math.Max(rNorm, Math.Max(gNorm, bNorm));
+                float min = Math.Min(rNorm, Math.Min(gNorm, bNorm));
+                float h, s, l = (max + min) / 2;
+
+                if (max == min)
+                {
+                    h = s = 0;
+                }
+                else
+                {
+                    float d = max - min;
+                    s = l > 0.5f ? d / (2 - max - min) : d / (max + min);
+
+                    if (max == rNorm)
+                    {
+                        h = (gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0);
+                    }
+                    else if (max == gNorm)
+                    {
+                        h = (bNorm - rNorm) / d + 2;
+                    }
+                    else
+                    {
+                        h = (rNorm - gNorm) / d + 4;
+                    }
+
+                    h /= 6;
+                }
+
                 hexlabel.Text = $"#{r:X2}{g:X2}{b:X2}";
                 rgblabel.Text = $"R: {r}, G: {g}, B: {b}";
-                cmkylabel.Text = $"CMYK: C: {(c * 100):0}%, M: {(m * 100):0}%, Y: {(y * 100):0}%, K: {(k * 100):0}%";
+                hsllabel.Text = $"H: {(h * 360):0}°, S: {(s * 100):0}%, L: {(l * 100):0}%";
+                cmkylabel.Text = $"C: {(c * 100):0}%, M: {(m * 100):0}%, Y: {(y * 100):0}%, K: {(k * 100):0}%";
                 colorpreview.BackColor = color;
             }
         }
 
-        private string ColorToHex(Color color)
+        private void CopyToClipboard(string text)
         {
-            return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+            Clipboard.SetText(text);
+        }
+
+        private void hexlabel_Click(object sender, EventArgs e)
+        {
+            CopyToClipboard($"#{_color.R:X2}{_color.G:X2}{_color.B:X2}");
+        }
+
+        private void rgblabel_Click(object sender, EventArgs e)
+        {
+            CopyToClipboard($"R: {_color.R}, G: {_color.G}, B: {_color.B}");
+        }
+        private void hsllabel_Click(object sender, EventArgs e)
+        {
+            float r = _color.R / 255f;
+            float g = _color.G / 255f;
+            float b = _color.B / 255f;
+
+            float max = Math.Max(r, Math.Max(g, b));
+            float min = Math.Min(r, Math.Min(g, b));
+            float h, s, l = (max + min) / 2;
+
+            if (max == min)
+            {
+                h = s = 0;
+            }
+            else
+            {
+                float d = max - min;
+                s = l > 0.5f ? d / (2 - max - min) : d / (max + min);
+
+                if (max == r)
+                {
+                    h = (g - b) / d + (g < b ? 6 : 0);
+                }
+                else if (max == g)
+                {
+                    h = (b - r) / d + 2;
+                }
+                else
+                {
+                    h = (r - g) / d + 4;
+                }
+
+                h /= 6;
+            }
+
+            CopyToClipboard($"H: {(h * 360):0}°, S: {(s * 100):0}%, L: {(l * 100):0}%");
+        }
+
+        private void cmkylabel_Click(object sender, EventArgs e)
+        {
+            float c = 1 - _color.R / 255f;
+            float m = 1 - _color.G / 255f;
+            float y = 1 - _color.B / 255f;
+            float k = Math.Min(c, Math.Min(m, y));
+
+            if (k < 1)
+            {
+                c = (c - k) / (1 - k);
+                m = (m - k) / (1 - k);
+                y = (y - k) / (1 - k);
+            }
+            else
+            {
+                c = m = y = 0;
+            }
+
+            CopyToClipboard($"C: {(c * 100):0}%, M: {(m * 100):0}%, Y: {(y * 100):0}%, K: {(k * 100):0}%");
         }
 
         private struct MouseHookStruct
