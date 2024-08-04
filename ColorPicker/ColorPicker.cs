@@ -140,7 +140,7 @@ namespace ColorPicker
                     h /= 6;
                 }
 
-                hexlabel.Text = $"#{r:X2}{g:X2}{b:X2}";
+                hexlabel.Text = $"Hex: #{r:X2}{g:X2}{b:X2}";
                 rgblabel.Text = $"R: {r}, G: {g}, B: {b}";
                 hsllabel.Text = $"H: {(h * 360):0}°, S: {(s * 100):0}%, L: {(l * 100):0}%";
                 cmkylabel.Text = $"C: {(c * 100):0}%, M: {(m * 100):0}%, Y: {(y * 100):0}%, K: {(k * 100):0}%";
